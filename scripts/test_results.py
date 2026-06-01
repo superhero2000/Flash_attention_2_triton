@@ -2,7 +2,7 @@
 # with the results of the naive attention implementation
 
 import torch
-from flash_attention_triton import FlashAttentionTriton
+from triton_flash_attention_2 import FlashAttentionTriton
 from torch.nn.functional import scaled_dot_product_attention
 import itertools
 import pandas as pd

@@ -1,5 +1,5 @@
 import torch
-from flash_attention_triton import FlashAttentionTriton
+from triton_flash_attention_2 import FlashAttentionTriton
 import pandas as pd
 import itertools
 import numpy as np
