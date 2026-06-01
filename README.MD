@@ -1,24 +1,30 @@
-# Triton Flash Attention 2 implementation
+# Triton Flash Attention 2 Implementation
 
-When using the classical attention mechanism in pytorch in the naive way, the memory usage is very high. A classical forward pass in the attention block given the Query, Key and Value matrix is done by first calculating the raw, unnormalized attention scores , then applying the softmax function to the attention scores (with masking in the causal case). After that we get the final output value by multiplying the attention scores with the Value matrix. In order to perform backpropagation, we have to use values from the unnormalized and normalized attention matrix, which is of size sequence_length x sequence_length. We can see, that the memory footprint grows quadratically with the sequence length. Flash attention is a technique to reduce the memory usage of the attention mechanism by using a block-wise approach to compute the attention scores. This technique results in a memory footprint of O(sequence_length \* model_dimension).
+When the classical attention mechanism is implemented naively in PyTorch, its memory usage is very high. Given the Query, Key, and Value matrices, a standard forward pass through the attention block first computes the raw, unnormalized attention scores, then applies the softmax function to those scores (with masking in the causal case). The final output is obtained by multiplying the normalized scores with the Value matrix. To perform backpropagation, we need values from both the unnormalized and normalized attention matrices, each of size `sequence_length x sequence_length`. As a result, the memory footprint grows quadratically with the sequence length. Flash Attention reduces this memory usage by computing the attention scores block by block, which lowers the memory footprint to `O(sequence_length * model_dimension)`.
 
-# What has been done in this project
+# What This Project Does
 
-I implemented Flash attention 2 in triton, to gain a better understanding of the technique and to see how it performs compared to the naive implementation. In src/triton_flash_attention_2/flash_attention_triton.py you can find the implementation of the flash attention mechanism in triton. In scripts/attention_implementations_comparison.py you can find the script to benchmark the performance of the flash attention mechanism in triton compared to the naive implementation. In scripts/test_results.py you can find the script to test the results of the flash attention mechanism in triton compared to the naive implementation. In notebooks/visualizations.ipynb you can find the notebook to visualize the results of the benchmark.
+I implemented Flash Attention 2 in Triton to gain a deeper understanding of the technique and to measure how it performs against a naive implementation.
+
+- `src/triton_flash_attention_2/flash_attention_triton.py` — the Flash Attention implementation in Triton.
+- `scripts/attention_implementations_comparison.py` — a script that benchmarks the Triton implementation against the naive one.
+- `scripts/test_results.py` — a script that verifies the correctness of the Triton implementation against the naive one.
+- `notebooks/visualizations.ipynb` — a notebook that visualizes the benchmark results.
 
 # Results
 
-The comparison was done only for singleheadattention. I timed one complete forward pass (without tracking the gradiends internally, mimiking inference) and one complete forward and backward pass for a batch size of 1 and 3.
-First of all one can see, that the triton kernel is faster than the naive implementation for all model dimensions and precisions. Furthermore the triton kernel never runs out of memory, while the naive and pytorch scaled dot product attention implementation are doing this.
+The comparison was performed for single-head attention only. I timed one complete forward pass (without tracking gradients internally, to mimic inference) and one complete forward-and-backward pass, for batch sizes of 1 and 3.
+
+Two main observations stand out. First, the Triton kernel is faster than the naive implementation across all model dimensions and precisions. Second, the Triton kernel never runs out of memory, whereas both the naive implementation and PyTorch's scaled dot-product attention do.
 
 # Conclusion
 
-The triton kernel is a very fast implementation of the flash attention mechanism. It is also memory efficient and does not run out of memory for any model dimensions and precisions. The naive implementation is also very fast, but it is memory inefficient and runs out of memory for some model dimensions and precisions. The pytorch scaled dot product attention implementation is the slowest and runs out of memory for some model dimensions and precisions.
+The Triton kernel is a very fast and memory-efficient implementation of Flash Attention; it does not run out of memory for any of the tested model dimensions and precisions. The naive implementation is also fast, but it is memory-inefficient and runs out of memory in some configurations. PyTorch's scaled dot-product attention is the slowest and likewise runs out of memory in some configurations.
 
-# Future work
+# Future Work
 
-This project already demonstrates the advantages of flash attention pretty well. In this repository only a single head of size model_dimension was considered. In practice, multiheadattention is used. Multihead attention also increases memory usage linearly with the number of heads, since for each new head, one must compute a new attention matrix. But this implementation has been done and studied in the original flash attention paper.
+This project already demonstrates the advantages of Flash Attention well. Here, only a single head of size `model_dimension` was considered. In practice, multi-head attention is used, and it increases memory usage linearly with the number of heads, since each head requires computing its own attention matrix. This case has already been implemented and studied in the original Flash Attention paper.
 
 # Links
 
-Original flash attention 2 paper: https://arxiv.org/abs/2307.08691
+Original Flash Attention 2 paper: https://arxiv.org/abs/2307.08691
